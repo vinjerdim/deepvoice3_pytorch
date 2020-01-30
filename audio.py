@@ -34,13 +34,20 @@ def spectrogram(y):
     return _normalize(S)
 
 
+# def inv_spectrogram(spectrogram):
+#     '''Converts spectrogram to waveform using librosa'''
+#     S = _db_to_amp(_denormalize(spectrogram) + hparams.ref_level_db)  # Convert back to linear
+#     processor = _lws_processor()
+#     D = processor.run_lws(S.astype(np.float64).T ** hparams.power)
+#     y = processor.istft(D).astype(np.float32)
+#     return inv_preemphasis(y)
+
+
 def inv_spectrogram(spectrogram):
     '''Converts spectrogram to waveform using librosa'''
     S = _db_to_amp(_denormalize(spectrogram) + hparams.ref_level_db)  # Convert back to linear
-    processor = _lws_processor()
-    D = processor.run_lws(S.astype(np.float64).T ** hparams.power)
-    y = processor.istft(D).astype(np.float32)
-    return inv_preemphasis(y)
+    return inv_preemphasis(_griffin_lim(S ** hparams.power, hparams),
+                           hparams.preemphasis, True)
 
 
 def melspectrogram(y):
@@ -91,3 +98,58 @@ def _normalize(S):
 
 def _denormalize(S):
     return (np.clip(S, 0, 1) * -hparams.min_level_db) + hparams.min_level_db
+
+
+# Griffin-Lim
+
+_inv_mel_basis = None
+
+
+def _mel_to_linear(mel_spectrogram):
+    global _inv_mel_basis
+    if _inv_mel_basis is None:
+        _inv_mel_basis = np.linalg.pinv(_build_mel_basis())
+    return np.maximum(1e-10, np.dot(_inv_mel_basis, mel_spectrogram))
+
+
+def inv_preemphasis(wav, k, inv_preemphasize=True):
+    if inv_preemphasize:
+        return signal.lfilter([1], [1, -k], wav)
+    return wav
+
+
+def _stft(y, hparams):
+    return librosa.stft(y=y, n_fft=hparams.fft_size,
+                        hop_length=hparams.hop_size,
+                        win_length=int(0.05 * hparams.sample_rate),
+                        pad_mode='constant')
+
+
+def _istft(y, hparams):
+    return librosa.istft(y, hop_length=hparams.hop_size,
+                         win_length=int(0.05 * hparams.sample_rate))
+
+
+def _griffin_lim(S, hparams):
+    '''
+      librosa implementation of Griffin-Lim
+      Based on https://github.com/librosa/librosa/issues/434
+    '''
+
+    angles = np.exp(2j * np.pi * np.random.rand(*S.shape))
+    S_complex = np.abs(S).astype(np.complex)
+    y = _istft(S_complex * angles, hparams)
+    for i in range(60):
+        angles = np.exp(1j * np.angle(_stft(y, hparams)))
+        y = _istft(S_complex * angles, hparams)
+    return y
+
+
+def inv_mel_spectrogram(spectrogram):
+    S = _mel_to_linear(_db_to_amp(
+        _denormalize(spectrogram) +
+        hparams.ref_level_db)
+    )  # Convert back to linear
+
+    return inv_preemphasis(_griffin_lim(S ** hparams.power, hparams),
+                           hparams.preemphasis, True)
