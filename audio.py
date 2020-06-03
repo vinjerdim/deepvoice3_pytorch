@@ -139,7 +139,7 @@ def _griffin_lim(S, hparams):
     angles = np.exp(2j * np.pi * np.random.rand(*S.shape))
     S_complex = np.abs(S).astype(np.complex)
     y = _istft(S_complex * angles, hparams)
-    for i in range(60):
+    for i in range(100):
         angles = np.exp(1j * np.angle(_stft(y, hparams)))
         y = _istft(S_complex * angles, hparams)
     return y

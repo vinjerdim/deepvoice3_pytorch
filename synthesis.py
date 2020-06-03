@@ -17,6 +17,7 @@ options:
     -h, --help               Show help message.
 """
 from docopt import docopt
+import torch
 
 import sys
 import os
@@ -24,9 +25,10 @@ from os.path import dirname, join, basename, splitext
 
 import audio
 
-import torch
+# import torch
 import numpy as np
 import nltk
+import datetime
 
 # The deepvoice3 model
 from deepvoice3_pytorch import frontend
@@ -135,8 +137,11 @@ if __name__ == "__main__":
         for idx, line in enumerate(lines):
             text = line.decode("utf-8")[:-1]
             words = nltk.word_tokenize(text)
+            start_time = datetime.datetime.now()
             waveform, alignment, _, _ = tts(
                 model, text, p=replace_pronunciation_prob, speaker_id=speaker_id, fast=True)
+            elapsed_time = datetime.datetime.now() - start_time
+            print(elapsed_time.seconds, ":", elapsed_time.microseconds)
             dst_wav_path = join(dst_dir, "{}_{}{}.wav".format(
                 idx, checkpoint_name, file_name_suffix))
             dst_alignment_path = join(

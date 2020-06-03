@@ -33,7 +33,7 @@ hparams = HParams(
 
     # Audio:
     num_mels=80,
-    fmin=125,
+    fmin=95,
     fmax=7600,
     fft_size=1024,
     hop_size=256,
@@ -59,7 +59,7 @@ hparams = HParams(
     padding_idx=0,
     # Maximum number of input text length
     # try setting larger value if you want to give very long text input
-    max_positions=512,
+    max_positions=3527,
     dropout=1 - 0.95,
     kernel_size=3,
     text_embed_dim=128,
@@ -96,7 +96,7 @@ hparams = HParams(
     guided_attention_sigma=0.2,
 
     # Training:
-    batch_size=16,
+    batch_size=32,
     adam_beta1=0.5,
     adam_beta2=0.9,
     adam_eps=1e-6,
@@ -104,7 +104,7 @@ hparams = HParams(
     initial_learning_rate=5e-4,  # 0.001,
     lr_schedule="noam_learning_rate_decay",
     lr_schedule_kwargs={},
-    nepochs=2000,
+    nepochs=10000,
     weight_decay=0.0,
     clip_thresh=0.1,
 

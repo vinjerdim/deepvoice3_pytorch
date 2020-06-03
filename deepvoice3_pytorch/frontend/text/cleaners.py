@@ -90,7 +90,7 @@ def english_cleaners(text):
     '''Pipeline for English text, including number and abbreviation expansion.'''
     text = convert_to_ascii(text)
     text = add_punctuation(text)
-    # text = lowercase(text)
+    text = lowercase(text)
     # text = expand_numbers(text)
     # text = expand_abbreviations(text)
     text = collapse_whitespace(text)
